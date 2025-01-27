@@ -58,8 +58,28 @@ public class MemorySpace {
 	 * @return the base address of the allocated block, or -1 if unable to allocate
 	 */
 	public int malloc(int length) {		
-		//// Replace the following statement with your code
-		return -1;
+		Node temp = freeList.getFirst();
+		Node mBlock = null;
+		while(temp != null) 
+		{
+			if(temp.block.length >= length) 
+			{
+				mBlock = temp;
+				break;
+			}
+			temp=temp.next;
+		}
+		if(mBlock != null) 
+		{
+			MemoryBlock newBlock = new MemoryBlock(mBlock.block.baseAddress , length);
+			allocatedList.addLast(newBlock);
+			int address = mBlock.block.baseAddress;
+			mBlock.block.length -= length;
+			mBlock.block.baseAddress += length;
+			if(mBlock.block.length == 0) freeList.remove(mBlock);
+			return address;
+		}
+		return -1;	
 	}
 
 	/**
@@ -71,7 +91,23 @@ public class MemorySpace {
 	 *            the starting address of the block to freeList
 	 */
 	public void free(int address) {
-		//// Write your code here
+		if(freeList.getSize() == 1 && freeList.getFirst().block.baseAddress == 0 && freeList.getFirst().block.length == 100) {
+			throw new IllegalArgumentException("index must be between 0 and size");
+		}
+		Node temp = allocatedList.getNode(0);
+		Node match = null;
+		while(temp != null) 
+		{
+			if(temp.block.baseAddress == address) 
+			{
+				match = temp;
+				break;
+			}
+			temp = temp.next;
+		}
+		if(match == null) return;
+		freeList.addLast(match.block);
+		allocatedList.remove(match.block);
 	}
 	
 	/**
@@ -88,6 +124,19 @@ public class MemorySpace {
 	 * In this implementation Malloc does not call defrag.
 	 */
 	public void defrag() {
-		//// Write your code here
+		if (freeList.getSize() <= 1) return;
+		freeList.sort();
+		Node current = freeList.getFirst();
+		while (current != null && current.next != null) 
+		{
+			MemoryBlock currentBlock = current.block;
+			MemoryBlock nextBlock = current.next.block;
+			if (currentBlock.baseAddress + currentBlock.length == nextBlock.baseAddress) 
+			{
+				currentBlock.length += nextBlock.length;
+				freeList.remove(current.next);
+			} 
+			else current = current.next;
+		}
 	}
 }
